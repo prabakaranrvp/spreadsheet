@@ -1,0 +1,27 @@
+{
+  "app": {
+    "title": "Spreadsheet"
+  },
+  "formulaBar": {
+    "label": "Formula bar",
+    "cellRef": "Cell reference",
+    "aria": "Formula for cell {{ref}}"
+  },
+  "grid": {
+    "label": "Spreadsheet grid"
+  },
+  "errors": {
+    "circularRef": "#CIRCULAR_REF",
+    "divZero": "#DIV/0!",
+    "invalidRef": "#REF!",
+    "parseError": "#ERROR!",
+    "nameError": "#NAME?"
+  },
+  "a11y": {
+    "selectedCell": "Selected cell {{ref}}, value {{value}}",
+    "editingCell": "Editing cell {{ref}}"
+  },
+  "language": {
+    "switch": "Language"
+  }
+}
