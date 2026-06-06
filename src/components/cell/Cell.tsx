@@ -1,11 +1,11 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toCellId } from '../../engine/RangeUtils';
-import { useCell, useEditing, useEditSource } from '../../store/selectors';
+import { useCell, useEditing, useEditSource, useSelected } from '../../store/selectors';
 import { useSpreadsheetStore } from '../../store/useSpreadsheetStore';
 import { displayValue, cellClasses } from '../../ui/format';
 import { useNumberFormat } from '../../i18n';
-import { CELL_BORDER } from '../../ui/cn';
+import { CELL_BORDER, cn } from '../../ui/cn';
 import { CellEditor } from './CellEditor';
 
 interface CellProps {
@@ -16,6 +16,7 @@ interface CellProps {
 function CellComponent({ col, row }: CellProps) {
   const id = toCellId(col, row);
   const cell = useCell(id);
+  const selectedCell = useSelected();
   const editingCell = useEditing();
   const editSource = useEditSource();
   const editBuffer = useSpreadsheetStore((s) =>
@@ -26,9 +27,14 @@ function CellComponent({ col, row }: CellProps) {
   const selectCell = useSpreadsheetStore((s) => s.selectCell);
   const enterEditMode = useSpreadsheetStore((s) => s.enterEditMode);
 
+  const isSelected = selectedCell === id;
   const isBeingEdited = editingCell === id;
   const isEditingInCell = isBeingEdited && editSource === 'cell';
 
+  const handleMouseDown = useCallback((e: MouseEvent) => {
+    // Keep focus on the grid container so keyboard navigation stays active.
+    e.preventDefault();
+  }, []);
   const handleClick = useCallback(() => selectCell(id), [id, selectCell]);
   const handleDoubleClick = useCallback(
     () => enterEditMode(id),
@@ -38,10 +44,14 @@ function CellComponent({ col, row }: CellProps) {
   return (
     <div
       role="gridcell"
-      tabIndex={-1}
       aria-selected={false}
-      className="relative h-full w-full bg-white"
+      className={cn(
+        'relative h-full w-full bg-white outline-none transition-[background-color,box-shadow] duration-100',
+        !isSelected &&
+          'hover:bg-gray-50 hover:ring-1 hover:ring-inset hover:ring-gray-300/60',
+      )}
       style={CELL_BORDER}
+      onMouseDown={handleMouseDown}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
     >

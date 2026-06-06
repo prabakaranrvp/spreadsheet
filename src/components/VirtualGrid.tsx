@@ -17,7 +17,8 @@ import {
   ROW_HEADER_W,
   COL_HEADER_H,
 } from '../ui/grid.config';
-import { useSelected } from '../store/selectors';
+import { useSelected, useEditing } from '../store/selectors';
+import { useSpreadsheetStore } from '../store/useSpreadsheetStore';
 import { parseCellId } from '../engine/RangeUtils';
 import { absBox, CELL_BORDER } from '../ui/cn';
 import { Cell } from './cell/Cell';
@@ -42,9 +43,20 @@ export const VirtualGrid = forwardRef<VirtualGridHandle>(function VirtualGrid(
   const scrollRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
   const selectedCell = useSelected();
+  const editingCell = useEditing();
+  const editSource = useSpreadsheetStore((s) => s.editSource);
   const { col: selCol, row: selRow } = parseCellId(selectedCell);
 
   useGridKeyboard(scrollRef);
+
+  // Single keyboard focus target for the grid; skip while an editor owns focus.
+  useEffect(() => {
+    const isEditingInCell = editingCell != null && editSource === 'cell';
+    const isEditingInFormulaBar =
+      editingCell != null && editSource === 'formulaBar';
+    if (isEditingInCell || isEditingInFormulaBar) return;
+    scrollRef.current?.focus();
+  }, [selectedCell, editingCell, editSource]);
 
   useImperativeHandle(ref, () => ({
     focus: () => scrollRef.current?.focus(),
