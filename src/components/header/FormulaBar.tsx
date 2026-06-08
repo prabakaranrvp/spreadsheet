@@ -4,6 +4,7 @@ import {
   useSelected,
   useEditing,
   useEditBuffer,
+  useEditCursor,
   useEditSource,
   useCell,
 } from '../../store/selectors';
@@ -24,17 +25,20 @@ export function FormulaBar({ onCommit }: FormulaBarProps) {
   const editingCell = useEditing();
   const editSource = useEditSource();
   const editBuffer = useEditBuffer();
-  const cell = useCell(selectedCell);
+  const editCursor = useEditCursor();
+  const formulaCell = editingCell ?? selectedCell;
+  const cell = useCell(formulaCell);
   const inputRef = useRef<HTMLInputElement>(null);
   const cellRefId = 'formula-bar-cell-ref';
 
   const enterEditMode = useSpreadsheetStore((s) => s.enterEditMode);
   const setEditSource = useSpreadsheetStore((s) => s.setEditSource);
   const updateBuffer = useSpreadsheetStore((s) => s.updateBuffer);
+  const setEditCursor = useSpreadsheetStore((s) => s.setEditCursor);
   const commitEdit = useSpreadsheetStore((s) => s.commitEdit);
   const discardEdit = useSpreadsheetStore((s) => s.discardEdit);
 
-  const isEditing = editingCell === selectedCell;
+  const isEditing = editingCell != null;
   const displayRaw = isEditing ? editBuffer : cell.raw;
 
   useEffect(() => {
@@ -50,10 +54,15 @@ export function FormulaBar({ onCommit }: FormulaBarProps) {
       const len = inputRef.current?.value.length ?? 0;
       inputRef.current?.setSelectionRange(len, len);
     }
-  }, [isEditing, editSource, selectedCell]);
+  }, [isEditing, editSource, formulaCell]);
+
+  useEffect(() => {
+    if (editCursor == null || document.activeElement !== inputRef.current) return;
+    inputRef.current?.setSelectionRange(editCursor, editCursor);
+  }, [displayRaw, editCursor]);
 
   const handleFocus = useCallback(() => {
-    if (editingCell === selectedCell) {
+    if (editingCell != null) {
       setEditSource('formulaBar');
     } else {
       enterEditMode(selectedCell, undefined, 'formulaBar');
@@ -61,7 +70,8 @@ export function FormulaBar({ onCommit }: FormulaBarProps) {
   }, [editingCell, selectedCell, setEditSource, enterEditMode]);
 
   const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => updateBuffer(e.target.value),
+    (e: React.ChangeEvent<HTMLInputElement>) =>
+      updateBuffer(e.target.value, e.target.selectionStart),
     [updateBuffer],
   );
 
@@ -106,7 +116,7 @@ export function FormulaBar({ onCommit }: FormulaBarProps) {
         className="flex h-7 w-14 shrink-0 items-center justify-center rounded border border-gray-200 bg-gray-100 text-xs font-semibold text-gray-700"
         aria-label={t('formulaBar.cellRef')}
       >
-        {selectedCell}
+        {formulaCell}
       </div>
       <div className="flex min-w-0 flex-1 items-center gap-1">
         <span className="shrink-0 text-sm text-gray-400" aria-hidden="true">
@@ -118,9 +128,12 @@ export function FormulaBar({ onCommit }: FormulaBarProps) {
           value={displayRaw}
           onFocus={handleFocus}
           onChange={handleChange}
+          onSelect={(e) => setEditCursor(e.currentTarget.selectionStart)}
+          onKeyUp={(e) => setEditCursor(e.currentTarget.selectionStart)}
+          onClick={(e) => setEditCursor(e.currentTarget.selectionStart)}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
-          aria-label={t('formulaBar.aria', { ref: selectedCell })}
+          aria-label={t('formulaBar.aria', { ref: formulaCell })}
           aria-describedby={cellRefId}
           data-formula-bar-input=""
           className="min-w-0 flex-1 rounded border border-transparent bg-transparent px-1 py-0.5 text-sm outline-none focus:border-blue-600 focus:bg-white focus:ring-1 focus:ring-blue-600/30"

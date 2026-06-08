@@ -18,9 +18,13 @@ export function resetSpreadsheetStore(): void {
   useSpreadsheetStore.setState({
     versions: new Map(),
     selectedCell: 'A1',
+    selectionAnchor: 'A1',
+    selectionFocus: 'A1',
     editingCell: null,
     editSource: null,
     editBuffer: '',
+    editCursor: null,
+    formulaReferenceSpan: null,
   });
   clearSaved();
 }

@@ -49,6 +49,15 @@ describe('FormulaBar', () => {
     expect(useSpreadsheetStore.getState().editBuffer).toBe('123');
   });
 
+  it('keeps showing the edited formula while a referenced cell is selected', () => {
+    renderFormulaBar();
+    useSpreadsheetStore.getState().enterEditMode('A1', '=SUM(', 'formulaBar');
+    useSpreadsheetStore.getState().selectCell('B2');
+
+    expect(screen.getByText('A1')).toBeInTheDocument();
+    expect(screen.getByLabelText('Formula for cell A1')).toHaveValue('=SUM(B2');
+  });
+
   it('commits on Enter and moves selection down', () => {
     renderFormulaBar();
     useSpreadsheetStore.getState().enterEditMode('A1', '5', 'formulaBar');

@@ -2,8 +2,10 @@ import { renderHook, act } from '@testing-library/react';
 import {
   useCell,
   useSelected,
+  useSelectedRange,
   useEditing,
   useEditBuffer,
+  useEditCursor,
   useEditSource,
 } from './selectors';
 import { useSpreadsheetStore } from './useSpreadsheetStore';
@@ -22,6 +24,15 @@ describe('selectors', () => {
     expect(result.current).toBe('D4');
   });
 
+  it('useSelectedRange reflects the active range', () => {
+    const { result } = renderHook(() => useSelectedRange());
+    act(() => {
+      useSpreadsheetStore.getState().selectCell('B2');
+      useSpreadsheetStore.getState().selectCell('C3', { extend: true });
+    });
+    expect(result.current).toEqual({ anchor: 'B2', focus: 'C3' });
+  });
+
   it('useEditing reflects editingCell', () => {
     const { result } = renderHook(() => useEditing());
     expect(result.current).toBeNull();
@@ -36,6 +47,15 @@ describe('selectors', () => {
       useSpreadsheetStore.getState().enterEditMode('A1', 'seed');
     });
     expect(result.current).toBe('seed');
+  });
+
+  it('useEditCursor reflects editCursor', () => {
+    const { result } = renderHook(() => useEditCursor());
+    act(() => {
+      useSpreadsheetStore.getState().enterEditMode('A1', '=1');
+      useSpreadsheetStore.getState().setEditCursor(1);
+    });
+    expect(result.current).toBe(1);
   });
 
   it('useEditSource reflects editSource', () => {

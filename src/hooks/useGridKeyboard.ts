@@ -23,7 +23,7 @@ export function useGridKeyboard(
         commitEdit,
         discardEdit,
         navigate,
-        clearCell,
+        clearSelection,
       } = useSpreadsheetStore.getState();
 
       const isEditing = useSpreadsheetStore.getState().editingCell != null;
@@ -53,19 +53,19 @@ export function useGridKeyboard(
       switch (e.key) {
         case 'ArrowUp':
           e.preventDefault();
-          navigate('up');
+          navigate('up', { extend: e.shiftKey });
           break;
         case 'ArrowDown':
           e.preventDefault();
-          navigate('down');
+          navigate('down', { extend: e.shiftKey });
           break;
         case 'ArrowLeft':
           e.preventDefault();
-          navigate('left');
+          navigate('left', { extend: e.shiftKey });
           break;
         case 'ArrowRight':
           e.preventDefault();
-          navigate('right');
+          navigate('right', { extend: e.shiftKey });
           break;
         case 'Enter':
           e.preventDefault();
@@ -86,7 +86,7 @@ export function useGridKeyboard(
         case 'Delete':
         case 'Backspace':
           e.preventDefault();
-          clearCell(sel);
+          clearSelection();
           break;
         default: {
           const char = isPrintableKey(e);
@@ -99,7 +99,18 @@ export function useGridKeyboard(
       }
     };
 
+    const handleCopy = (e: ClipboardEvent) => {
+      if (useSpreadsheetStore.getState().editingCell != null) return;
+      const text = useSpreadsheetStore.getState().getSelectionClipboardText();
+      e.preventDefault();
+      e.clipboardData?.setData('text/plain', text);
+    };
+
     el.addEventListener('keydown', handleKeyDown);
-    return () => el.removeEventListener('keydown', handleKeyDown);
+    el.addEventListener('copy', handleCopy);
+    return () => {
+      el.removeEventListener('keydown', handleKeyDown);
+      el.removeEventListener('copy', handleCopy);
+    };
   }, [containerRef, editingCell, selectedCell]);
 }

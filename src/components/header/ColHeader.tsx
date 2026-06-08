@@ -1,6 +1,6 @@
 import { memo } from 'react';
-import { colLetter, parseCellId } from '../../engine/RangeUtils';
-import { useSelected } from '../../store/selectors';
+import { colLetter, getRangeBounds, parseCellId } from '../../engine/RangeUtils';
+import { useSelected, useSelectedRange } from '../../store/selectors';
 import { absBox, CELL_BORDER, cn } from '../../ui/cn';
 import { COL_HEADER_H } from '../../ui/grid.config';
 
@@ -12,15 +12,18 @@ interface ColHeaderProps {
 
 function ColHeaderComponent({ col, width, left }: ColHeaderProps) {
   const selected = useSelected();
+  const selectedRange = useSelectedRange();
   const { col: activeCol } = parseCellId(selected);
+  const range = getRangeBounds(selectedRange.anchor, selectedRange.focus);
   const isActive = col === activeCol;
+  const isInRange = col >= range.minCol && col <= range.maxCol;
 
   return (
     <div
       role="columnheader"
       className={cn(
         'flex items-center justify-center text-xs font-medium',
-        isActive
+        isActive || isInRange
           ? 'bg-slate-200 text-blue-600'
           : 'bg-gray-100 text-gray-600',
       )}

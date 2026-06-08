@@ -17,9 +17,9 @@ import {
   ROW_HEADER_W,
   COL_HEADER_H,
 } from '../ui/grid.config';
-import { useSelected, useEditing } from '../store/selectors';
+import { useSelected, useSelectedRange, useEditing } from '../store/selectors';
 import { useSpreadsheetStore } from '../store/useSpreadsheetStore';
-import { parseCellId } from '../engine/RangeUtils';
+import { getRangeBounds, parseCellId } from '../engine/RangeUtils';
 import { absBox, CELL_BORDER } from '../ui/cn';
 import { Cell } from './cell/Cell';
 import { ColHeader } from './header/ColHeader';
@@ -43,6 +43,7 @@ export const VirtualGrid = forwardRef<VirtualGridHandle>(function VirtualGrid(
   const scrollRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
   const selectedCell = useSelected();
+  const selectedRange = useSelectedRange();
   const editingCell = useEditing();
   const editSource = useSpreadsheetStore((s) => s.editSource);
   const { col: selCol, row: selRow } = parseCellId(selectedCell);
@@ -109,6 +110,20 @@ export const VirtualGrid = forwardRef<VirtualGridHandle>(function VirtualGrid(
 
   const selLeft = ROW_HEADER_W + getColStart(selCol);
   const selTop = COL_HEADER_H + getRowStart(selRow);
+  const selectionBounds = getRangeBounds(
+    selectedRange.anchor,
+    selectedRange.focus,
+  );
+  const rangeLeft = ROW_HEADER_W + getColStart(selectionBounds.minCol);
+  const rangeTop = COL_HEADER_H + getRowStart(selectionBounds.minRow);
+  const rangeRight =
+    ROW_HEADER_W +
+    getColStart(selectionBounds.maxCol) +
+    CELL_W;
+  const rangeBottom =
+    COL_HEADER_H +
+    getRowStart(selectionBounds.maxRow) +
+    CELL_H;
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden border border-gray-300">
@@ -206,12 +221,24 @@ export const VirtualGrid = forwardRef<VirtualGridHandle>(function VirtualGrid(
             aria-hidden="true"
             className="pointer-events-none z-10 border-2 border-blue-600 bg-blue-600/10"
             style={absBox({
-              top: selTop,
-              left: selLeft,
-              width: CELL_W,
-              height: CELL_H,
+              top: rangeTop,
+              left: rangeLeft,
+              width: rangeRight - rangeLeft,
+              height: rangeBottom - rangeTop,
             })}
           />
+          {selectedRange.anchor !== selectedRange.focus && (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none z-10 border-2 border-blue-700"
+              style={absBox({
+                top: selTop,
+                left: selLeft,
+                width: CELL_W,
+                height: CELL_H,
+              })}
+            />
+          )}
         </div>
       </div>
     </div>

@@ -1,4 +1,14 @@
-import { colLetter, letterToIndex, toCellId, parseCellId, inBounds, expandRange } from './RangeUtils';
+import {
+  colLetter,
+  letterToIndex,
+  toCellId,
+  parseCellId,
+  inBounds,
+  getRangeBounds,
+  getRangeReference,
+  isCellInRange,
+  expandRange,
+} from './RangeUtils';
 import { COLS, ROWS } from '../ui/grid.config';
 
 describe('colLetter', () => {
@@ -66,6 +76,27 @@ describe('inBounds', () => {
   });
   it('returns true for interior cells', () => {
     expect(inBounds(5, 10)).toBe(true);
+  });
+});
+
+describe('range helpers', () => {
+  it('normalizes reversed range corners', () => {
+    expect(getRangeBounds('C3', 'A1')).toEqual({
+      minCol: 0,
+      maxCol: 2,
+      minRow: 0,
+      maxRow: 2,
+    });
+  });
+
+  it('formats single-cell and multi-cell references', () => {
+    expect(getRangeReference('B2', 'B2')).toBe('B2');
+    expect(getRangeReference('C3', 'A1')).toBe('A1:C3');
+  });
+
+  it('checks whether a cell is inside a range', () => {
+    expect(isCellInRange('B2', 'A1', 'C3')).toBe(true);
+    expect(isCellInRange('D2', 'A1', 'C3')).toBe(false);
   });
 });
 

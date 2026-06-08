@@ -14,11 +14,20 @@ export function useCell(id: CellId) {
 export const useSelected = () =>
   useSpreadsheetStore((s) => s.selectedCell);
 
+export const useSelectedRange = () => {
+  const anchor = useSpreadsheetStore((s) => s.selectionAnchor);
+  const focus = useSpreadsheetStore((s) => s.selectionFocus);
+  return useMemo(() => ({ anchor, focus }), [anchor, focus]);
+};
+
 export const useEditing = () =>
   useSpreadsheetStore((s) => s.editingCell);
 
 export const useEditBuffer = () =>
   useSpreadsheetStore((s) => s.editBuffer);
+
+export const useEditCursor = () =>
+  useSpreadsheetStore((s) => s.editCursor);
 
 export const useEditSource = () =>
   useSpreadsheetStore((s) => s.editSource);

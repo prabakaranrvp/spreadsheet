@@ -19,6 +19,10 @@ describe('useSpreadsheetStore', () => {
     it('updates selectedCell', () => {
       getState().selectCell('C3');
       expect(getState().selectedCell).toBe('C3');
+      expect(getState().getSelectedRange()).toEqual({
+        anchor: 'C3',
+        focus: 'C3',
+      });
     });
 
     it('commits an in-progress edit when selecting a different cell', () => {
@@ -26,6 +30,35 @@ describe('useSpreadsheetStore', () => {
       getState().selectCell('B1');
       expect(getState().editingCell).toBeNull();
       expect(getState().engine.getCell('A1').raw).toBe('99');
+    });
+
+    it('extends the active selection range', () => {
+      getState().selectCell('B2');
+      getState().selectCell('D4', { extend: true });
+      expect(getState().selectedCell).toBe('D4');
+      expect(getState().getSelectedRange()).toEqual({
+        anchor: 'B2',
+        focus: 'D4',
+      });
+      expect(getState().getSelectedRangeReference()).toBe('B2:D4');
+    });
+
+    it('inserts a clicked cell reference while editing a formula', () => {
+      getState().enterEditMode('A1', '=SUM(', 'cell');
+      getState().selectCell('B2');
+
+      expect(getState().editingCell).toBe('A1');
+      expect(getState().editBuffer).toBe('=SUM(B2');
+      expect(getState().selectedCell).toBe('B2');
+    });
+
+    it('replaces the inserted formula reference with a dragged range', () => {
+      getState().enterEditMode('A1', '=SUM(', 'cell');
+      getState().selectCell('B2');
+      getState().extendSelection('C4');
+
+      expect(getState().editBuffer).toBe('=SUM(B2:C4');
+      expect(getState().getSelectedRangeReference()).toBe('B2:C4');
     });
   });
 
@@ -61,6 +94,15 @@ describe('useSpreadsheetStore', () => {
       getState().enterEditMode('A1');
       getState().updateBuffer('=1+2');
       expect(getState().editBuffer).toBe('=1+2');
+    });
+
+    it('tracks the edit cursor for formula reference insertion', () => {
+      getState().enterEditMode('A1', '=+', 'formulaBar');
+      getState().updateBuffer('=+', 1);
+      getState().selectCell('B1');
+
+      expect(getState().editBuffer).toBe('=B1+');
+      expect(getState().editCursor).toBe(3);
     });
   });
 
@@ -132,6 +174,17 @@ describe('useSpreadsheetStore', () => {
       getState().navigate('up');
       expect(getState().selectedCell).toBe('A1');
     });
+
+    it('extends the selection range while navigating', () => {
+      getState().selectCell('B2');
+      getState().navigate('right', { extend: true });
+      getState().navigate('down', { extend: true });
+      expect(getState().getSelectedRange()).toEqual({
+        anchor: 'B2',
+        focus: 'C3',
+      });
+      expect(getState().getSelectedRangeReference()).toBe('B2:C3');
+    });
   });
 
   describe('clearCell', () => {
@@ -145,6 +198,31 @@ describe('useSpreadsheetStore', () => {
     it('is a no-op for already empty cells', () => {
       getState().clearCell('A1');
       expect(getState().versions.get('A1')).toBeUndefined();
+    });
+  });
+
+  describe('range clipboard and clearing', () => {
+    it('copies the selected range as tab-separated computed values', () => {
+      getState().engine.setCellRaw('A1', '1');
+      getState().engine.setCellRaw('B1', '2');
+      getState().engine.setCellRaw('A2', 'text');
+      getState().engine.setCellRaw('B2', '=A1+B1');
+      getState().selectCell('A1');
+      getState().selectCell('B2', { extend: true });
+
+      expect(getState().getSelectionClipboardText()).toBe('1\t2\ntext\t3');
+    });
+
+    it('clears every non-empty cell in the selected range', () => {
+      getState().engine.setCellRaw('A1', '1');
+      getState().engine.setCellRaw('B1', '2');
+      getState().selectCell('A1');
+      getState().selectCell('B1', { extend: true });
+
+      getState().clearSelection();
+
+      expect(getState().engine.getCell('A1').raw).toBe('');
+      expect(getState().engine.getCell('B1').raw).toBe('');
     });
   });
 });
