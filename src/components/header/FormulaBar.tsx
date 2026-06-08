@@ -129,8 +129,6 @@ export function FormulaBar({ onCommit }: FormulaBarProps) {
           onFocus={handleFocus}
           onChange={handleChange}
           onSelect={(e) => setEditCursor(e.currentTarget.selectionStart)}
-          onKeyUp={(e) => setEditCursor(e.currentTarget.selectionStart)}
-          onClick={(e) => setEditCursor(e.currentTarget.selectionStart)}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           aria-label={t('formulaBar.aria', { ref: formulaCell })}

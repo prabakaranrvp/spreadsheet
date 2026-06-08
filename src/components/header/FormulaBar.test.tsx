@@ -1,4 +1,4 @@
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FormulaBar } from './FormulaBar';
 import { LiveRegion } from '../common/LiveRegion';
@@ -51,8 +51,10 @@ describe('FormulaBar', () => {
 
   it('keeps showing the edited formula while a referenced cell is selected', () => {
     renderFormulaBar();
-    useSpreadsheetStore.getState().enterEditMode('A1', '=SUM(', 'formulaBar');
-    useSpreadsheetStore.getState().selectCell('B2');
+    act(() => {
+      useSpreadsheetStore.getState().enterEditMode('A1', '=SUM(', 'formulaBar');
+      useSpreadsheetStore.getState().selectCell('B2');
+    });
 
     expect(screen.getByText('A1')).toBeInTheDocument();
     expect(screen.getByLabelText('Formula for cell A1')).toHaveValue('=SUM(B2');
