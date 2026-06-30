@@ -2,6 +2,7 @@
   "name": "spreadsheet",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://prabakaranrvp.github.io/spreadsheet",
   "dependencies": {
     "@tanstack/react-virtual": "^3.14.2",
     "@testing-library/dom": "^10.4.1",
