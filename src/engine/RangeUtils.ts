@@ -1,6 +1,13 @@
 import type { CellId } from './types';
 import { COLS, ROWS } from '../ui/grid.config';
 
+export interface CellRangeBounds {
+  minCol: number;
+  maxCol: number;
+  minRow: number;
+  maxRow: number;
+}
+
 export function colLetter(col: number): string {
   return String.fromCharCode(65 + col);
 }
@@ -30,17 +37,41 @@ export function inBounds(col: number, row: number): boolean {
   return col >= 0 && col < COLS && row >= 0 && row < ROWS;
 }
 
-/** Expand a rectangular range (e.g. A1:C3) into a flat list of cell IDs. */
-export function expandRange(from: CellId, to: CellId): CellId[] {
+export function getRangeBounds(from: CellId, to: CellId): CellRangeBounds {
   const { col: fc, row: fr } = parseCellId(from);
   const { col: tc, row: tr } = parseCellId(to);
-  const minC = Math.min(fc, tc);
-  const maxC = Math.max(fc, tc);
-  const minR = Math.min(fr, tr);
-  const maxR = Math.max(fr, tr);
+  return {
+    minCol: Math.min(fc, tc),
+    maxCol: Math.max(fc, tc),
+    minRow: Math.min(fr, tr),
+    maxRow: Math.max(fr, tr),
+  };
+}
+
+export function getRangeReference(from: CellId, to: CellId): string {
+  const bounds = getRangeBounds(from, to);
+  const start = toCellId(bounds.minCol, bounds.minRow);
+  const end = toCellId(bounds.maxCol, bounds.maxRow);
+  return start === end ? start : `${start}:${end}`;
+}
+
+export function isCellInRange(id: CellId, from: CellId, to: CellId): boolean {
+  const { col, row } = parseCellId(id);
+  const bounds = getRangeBounds(from, to);
+  return (
+    col >= bounds.minCol &&
+    col <= bounds.maxCol &&
+    row >= bounds.minRow &&
+    row <= bounds.maxRow
+  );
+}
+
+/** Expand a rectangular range (e.g. A1:C3) into a flat list of cell IDs. */
+export function expandRange(from: CellId, to: CellId): CellId[] {
+  const { minCol, maxCol, minRow, maxRow } = getRangeBounds(from, to);
   const ids: CellId[] = [];
-  for (let r = minR; r <= maxR; r++) {
-    for (let c = minC; c <= maxC; c++) {
+  for (let r = minRow; r <= maxRow; r++) {
+    for (let c = minCol; c <= maxCol; c++) {
       ids.push(toCellId(c, r));
     }
   }

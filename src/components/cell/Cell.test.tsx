@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Cell } from './Cell';
 import { useSpreadsheetStore } from '../../store/useSpreadsheetStore';
@@ -25,6 +25,24 @@ describe('Cell', () => {
 
     await userEvent.click(screen.getByRole('gridcell'));
     expect(useSpreadsheetStore.getState().selectedCell).toBe('B3');
+  });
+
+  it('extends selection while dragging across cells', () => {
+    renderWithI18n(
+      <>
+        <Cell col={0} row={0} />
+        <Cell col={1} row={1} />
+      </>,
+    );
+    const cells = screen.getAllByRole('gridcell');
+
+    fireEvent.mouseDown(cells[0], { button: 0 });
+    fireEvent.mouseEnter(cells[1], { buttons: 1 });
+
+    expect(useSpreadsheetStore.getState().getSelectedRange()).toEqual({
+      anchor: 'A1',
+      focus: 'B2',
+    });
   });
 
   it('enters edit mode on double click', async () => {

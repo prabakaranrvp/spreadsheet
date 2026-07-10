@@ -8,6 +8,7 @@ export function CellEditor() {
   const inputRef = useRef<HTMLInputElement>(null);
   const editBuffer = useEditBuffer();
   const updateBuffer = useSpreadsheetStore((s) => s.updateBuffer);
+  const setEditCursor = useSpreadsheetStore((s) => s.setEditCursor);
   const setEditSource = useSpreadsheetStore((s) => s.setEditSource);
   const commitEdit = useSpreadsheetStore((s) => s.commitEdit);
 
@@ -22,7 +23,8 @@ export function CellEditor() {
       ref={inputRef}
       type="text"
       value={editBuffer}
-      onChange={(e) => updateBuffer(e.target.value)}
+      onChange={(e) => updateBuffer(e.target.value, e.target.selectionStart)}
+      onSelect={(e) => setEditCursor(e.currentTarget.selectionStart)}
       onBlur={(e) => {
         const next = e.relatedTarget;
         if (next instanceof Element && next.closest('[data-formula-bar-input]')) {

@@ -36,6 +36,19 @@ describe('useGridKeyboard', () => {
     expect(getState().selectedCell).toBe('B2');
   });
 
+  it('extends selection with Shift+Arrow keys', () => {
+    const { getByTestId } = render(<KeyboardHarness />);
+    const grid = getByTestId('grid');
+
+    keyDown(grid, 'ArrowRight', { shiftKey: true });
+    keyDown(grid, 'ArrowDown', { shiftKey: true });
+
+    expect(getState().getSelectedRange()).toEqual({
+      anchor: 'A1',
+      focus: 'B2',
+    });
+  });
+
   it('enters edit mode on Enter and F2', () => {
     const { getByTestId } = render(<KeyboardHarness />);
     const grid = getByTestId('grid');
@@ -78,6 +91,19 @@ describe('useGridKeyboard', () => {
     const { getByTestId } = render(<KeyboardHarness />);
     keyDown(getByTestId('grid'), 'Delete');
     expect(getState().engine.getCell('A1').raw).toBe('');
+  });
+
+  it('copies the selected range as plain text', () => {
+    getState().engine.setCellRaw('A1', '1');
+    getState().engine.setCellRaw('B1', '2');
+    getState().selectCell('A1');
+    getState().selectCell('B1', { extend: true });
+    const { getByTestId } = render(<KeyboardHarness />);
+    const clipboardData = { setData: jest.fn() };
+
+    fireEvent.copy(getByTestId('grid'), { clipboardData });
+
+    expect(clipboardData.setData).toHaveBeenCalledWith('text/plain', '1\t2');
   });
 
   it('commits edit on Enter when editing', () => {

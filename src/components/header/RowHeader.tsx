@@ -1,6 +1,6 @@
 import { memo } from 'react';
-import { parseCellId } from '../../engine/RangeUtils';
-import { useSelected } from '../../store/selectors';
+import { getRangeBounds, parseCellId } from '../../engine/RangeUtils';
+import { useSelected, useSelectedRange } from '../../store/selectors';
 import { absBox, CELL_BORDER, cn } from '../../ui/cn';
 import { ROW_HEADER_W } from '../../ui/grid.config';
 
@@ -12,15 +12,18 @@ interface RowHeaderProps {
 
 function RowHeaderComponent({ row, height, top }: RowHeaderProps) {
   const selected = useSelected();
+  const selectedRange = useSelectedRange();
   const { row: activeRow } = parseCellId(selected);
+  const range = getRangeBounds(selectedRange.anchor, selectedRange.focus);
   const isActive = row === activeRow;
+  const isInRange = row >= range.minRow && row <= range.maxRow;
 
   return (
     <div
       role="rowheader"
       className={cn(
         'flex items-center justify-center text-xs font-medium',
-        isActive
+        isActive || isInRange
           ? 'bg-slate-200 text-blue-600'
           : 'bg-gray-100 text-gray-600',
       )}

@@ -1,7 +1,13 @@
 import { memo, useCallback, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toCellId } from '../../engine/RangeUtils';
-import { useCell, useEditing, useEditSource, useSelected } from '../../store/selectors';
+import { isCellInRange, toCellId } from '../../engine/RangeUtils';
+import {
+  useCell,
+  useEditing,
+  useEditSource,
+  useSelected,
+  useSelectedRange,
+} from '../../store/selectors';
 import { useSpreadsheetStore } from '../../store/useSpreadsheetStore';
 import { displayValue, cellClasses } from '../../ui/format';
 import { useNumberFormat } from '../../i18n';
@@ -17,6 +23,7 @@ function CellComponent({ col, row }: CellProps) {
   const id = toCellId(col, row);
   const cell = useCell(id);
   const selectedCell = useSelected();
+  const selectedRange = useSelectedRange();
   const editingCell = useEditing();
   const editSource = useEditSource();
   const editBuffer = useSpreadsheetStore((s) =>
@@ -25,17 +32,28 @@ function CellComponent({ col, row }: CellProps) {
   const { t } = useTranslation();
   const nf = useNumberFormat();
   const selectCell = useSpreadsheetStore((s) => s.selectCell);
+  const extendSelection = useSpreadsheetStore((s) => s.extendSelection);
   const enterEditMode = useSpreadsheetStore((s) => s.enterEditMode);
 
   const isSelected = selectedCell === id;
+  const isInSelectedRange = isCellInRange(
+    id,
+    selectedRange.anchor,
+    selectedRange.focus,
+  );
   const isBeingEdited = editingCell === id;
   const isEditingInCell = isBeingEdited && editSource === 'cell';
 
   const handleMouseDown = useCallback((e: MouseEvent) => {
     // Keep focus on the grid container so keyboard navigation stays active.
     e.preventDefault();
-  }, []);
-  const handleClick = useCallback(() => selectCell(id), [id, selectCell]);
+    if (e.button !== 0) return;
+    selectCell(id, { extend: e.shiftKey });
+  }, [id, selectCell]);
+  const handleMouseEnter = useCallback((e: MouseEvent) => {
+    if ((e.buttons & 1) !== 1) return;
+    extendSelection(id);
+  }, [id, extendSelection]);
   const handleDoubleClick = useCallback(
     () => enterEditMode(id),
     [id, enterEditMode],
@@ -44,15 +62,17 @@ function CellComponent({ col, row }: CellProps) {
   return (
     <div
       role="gridcell"
-      aria-selected={false}
+      aria-selected={isInSelectedRange}
       className={cn(
         'relative h-full w-full bg-white outline-none transition-[background-color,box-shadow] duration-100',
+        isInSelectedRange && !isBeingEdited && 'bg-blue-50',
         !isSelected &&
+          !isInSelectedRange &&
           'hover:bg-gray-50 hover:ring-1 hover:ring-inset hover:ring-gray-300/60',
       )}
       style={CELL_BORDER}
       onMouseDown={handleMouseDown}
-      onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
       onDoubleClick={handleDoubleClick}
     >
       {!isBeingEdited && (
